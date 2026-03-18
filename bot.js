@@ -4,6 +4,7 @@ const { Authflow, Titles } = require('prismarine-auth')
 const TARGET_SERVER_IP = '162.120.4.88'
 const TARGET_SERVER_PORT = 9010
 const BOT_EMAIL = 'CSMPREDIRECT@outlook.com'
+const AUTH_CACHE = '/tmp/auth-cache'
 
 async function startBot() {
   console.log('[Bot] Connecting to server...')
@@ -11,7 +12,7 @@ async function startBot() {
     host: TARGET_SERVER_IP,
     port: TARGET_SERVER_PORT,
     username: BOT_EMAIL,
-    profilesFolder: '/tmp/auth-cache',
+    profilesFolder: AUTH_CACHE,
     flow: 'live',
     authTitle: Titles.MinecraftNintendoSwitch,
     deviceType: 'Nintendo'
@@ -29,7 +30,7 @@ async function startBot() {
 }
 
 async function autoAcceptFriends() {
-  const auth = new Authflow(BOT_EMAIL, '/tmp/auth-cache', {
+  const auth = new Authflow(BOT_EMAIL, AUTH_CACHE, {
     flow: 'live',
     authTitle: Titles.MinecraftNintendoSwitch,
     deviceType: 'Nintendo'
@@ -48,27 +49,17 @@ async function autoAcceptFriends() {
     const data = await res.json()
     console.log('[Bot] Raw people data:', JSON.stringify(data).slice(0, 300))
     const followers = data?.people ?? []
-    if (followers.length === 0) {
-      console.log('[Bot] No pending requests.')
-      return
-    }
+    if (followers.length === 0) { console.log('[Bot] No pending requests.'); return }
     for (const person of followers) {
       const xuid = person?.xuid
       if (!xuid || !/^\d+$/.test(xuid)) continue
       if (person.isFollowedByCaller) continue
       const addRes = await fetch(`https://social.xboxlive.com/users/me/people/xuid(${xuid})`, {
         method: 'PUT',
-        headers: {
-          Authorization: xblAuth,
-          'x-xbl-contract-version': '2',
-          'Content-Length': '0'
-        }
+        headers: { Authorization: xblAuth, 'x-xbl-contract-version': '2', 'Content-Length': '0' }
       })
       if (addRes.ok || addRes.status === 204) {
         console.log(`[Bot] Auto-friended: ${person.displayName} (${xuid})`)
-      } else {
-        const errBody = await addRes.text()
-        console.warn(`[Bot] Failed to friend ${person.displayName}: ${addRes.status} ${errBody}`)
       }
     }
   } catch (err) {
@@ -76,6 +67,20 @@ async function autoAcceptFriends() {
   }
 }
 
-startBot()
-autoAcceptFriends()
-setInterval(autoAcceptFriends, 30_000)
+async function main() {
+  // Authenticate once first so both startBot and autoAcceptFriends share the same token
+  console.log('[Bot] Authenticating...')
+  const auth = new Authflow(BOT_EMAIL, AUTH_CACHE, {
+    flow: 'live',
+    authTitle: Titles.MinecraftNintendoSwitch,
+    deviceType: 'Nintendo'
+  })
+  await auth.getXboxToken('http://xboxlive.com')
+  console.log('[Bot] Auth complete, starting...')
+
+  startBot()
+  autoAcceptFriends()
+  setInterval(autoAcceptFriends, 30_000)
+}
+
+main()
