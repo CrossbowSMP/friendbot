@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
+    cmake \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
