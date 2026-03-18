@@ -12,6 +12,7 @@ async function startBot() {
     port: TARGET_SERVER_PORT,
     username: BOT_EMAIL,
     profilesFolder: '/tmp/auth-cache',
+    flow: 'live',
     authTitle: Titles.MinecraftNintendoSwitch,
     deviceType: 'Nintendo'
   })
@@ -45,17 +46,30 @@ async function autoAcceptFriends() {
       }
     })
     const data = await res.json()
+    console.log('[Bot] Raw people data:', JSON.stringify(data).slice(0, 300))
     const followers = data?.people ?? []
-    if (followers.length === 0) { console.log('[Bot] No pending requests.'); return }
+    if (followers.length === 0) {
+      console.log('[Bot] No pending requests.')
+      return
+    }
     for (const person of followers) {
       const xuid = person?.xuid
       if (!xuid || !/^\d+$/.test(xuid)) continue
-      if (person.isFollowedByCaller) continue // already friends, skip
+      if (person.isFollowedByCaller) continue
       const addRes = await fetch(`https://social.xboxlive.com/users/me/people/xuid(${xuid})`, {
         method: 'PUT',
-        headers: { Authorization: xblAuth, 'x-xbl-contract-version': '2', 'Content-Length': '0' }
+        headers: {
+          Authorization: xblAuth,
+          'x-xbl-contract-version': '2',
+          'Content-Length': '0'
+        }
       })
-      if (addRes.ok || addRes.status === 204) console.log(`[Bot] Auto-friended: ${person.displayName}`)
+      if (addRes.ok || addRes.status === 204) {
+        console.log(`[Bot] Auto-friended: ${person.displayName} (${xuid})`)
+      } else {
+        const errBody = await addRes.text()
+        console.warn(`[Bot] Failed to friend ${person.displayName}: ${addRes.status} ${errBody}`)
+      }
     }
   } catch (err) {
     console.error('[Bot] Error:', err.message)
