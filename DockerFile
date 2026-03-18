@@ -1,11 +1,12 @@
+FROM ghcr.io/playit-cloud/playit-agent:0.17 AS playit
+
 FROM node:18-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && \
-    curl -SL https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64 \
-    -o /usr/local/bin/playit && \
-    chmod +x /usr/local/bin/playit
+COPY --from=playit /usr/local/bin/playit /usr/local/bin/playit
+
+RUN apt-get update && apt-get install -y ca-certificates
 
 COPY package*.json ./
 RUN npm install --production
