@@ -1,0 +1,17 @@
+FROM node:18-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y curl && \
+    curl -SL https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-linux-amd64 \
+    -o /usr/local/bin/playit && \
+    chmod +x /usr/local/bin/playit
+
+COPY package*.json ./
+RUN npm install --production
+
+COPY . .
+COPY start.sh ./
+RUN chmod +x start.sh
+
+CMD ["./start.sh"]
