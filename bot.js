@@ -1,28 +1,23 @@
 const bedrock = require('bedrock-protocol')
 const { Authflow, Titles } = require('prismarine-auth')
 
-// ✅ CONFIG — change these
-const TARGET_SERVER_IP = '162.120.4.88'
+const TARGET_SERVER_IP = '162.120.4.88'   // ← change this
 const TARGET_SERVER_PORT = 9010
-const BOT_PORT = 19132
-const BOT_EMAIL = 'CSMPREDIRECT@outlook.com' // ← your bot's Microsoft email
+const BOT_EMAIL = 'CSMPREDIRECT@outlook.com'     // ← change this
 
 const server = bedrock.createServer({
   host: '0.0.0.0',
-  port: BOT_PORT,
+  port: 19132,
   version: '1.21.0',
   offline: false,
-  motd: {
-    motd: 'Connecting you...',
-    levelName: 'Join to connect!'
-  }
+  motd: { motd: 'Connecting...', levelName: 'Join me!' }
 })
 
-console.log(`[Bot] Listening on port ${BOT_PORT}`)
+console.log('[Bot] Listening on port 19132')
 
 server.on('connect', (client) => {
   client.on('join', () => {
-    console.log(`[Bot] Player joined, transferring...`)
+    console.log('[Bot] Player joined, transferring...')
     client.queue('transfer', {
       server_address: TARGET_SERVER_IP,
       port: TARGET_SERVER_PORT
@@ -33,7 +28,7 @@ server.on('connect', (client) => {
 async function autoAcceptFriends() {
   const auth = new Authflow(BOT_EMAIL, './auth-cache', {
     flow: 'live',
-    authTitle: Titles.MinecraftNintendoSwitch, // ← this fixes the error!
+    authTitle: Titles.MinecraftNintendoSwitch,
     deviceType: 'Nintendo'
   })
 
@@ -67,7 +62,7 @@ async function autoAcceptFriends() {
       console.log('[Bot] No pending requests.')
     }
   } catch (err) {
-    console.error('[Bot] Auth error:', err.message)
+    console.error('[Bot] Error:', err.message)
   }
 }
 
