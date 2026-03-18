@@ -1,9 +1,10 @@
 const bedrock = require('bedrock-protocol')
 const { Authflow, Titles } = require('prismarine-auth')
 
-const TARGET_SERVER_IP = '162.120.4.88'   // ← change this
+// ✅ CONFIG
+const TARGET_SERVER_IP = '162.120.4.88'
 const TARGET_SERVER_PORT = 9010
-const BOT_EMAIL = 'CSMPREDIRECT@outlook.com'     // ← change this
+const BOT_EMAIL = 'CSMPREDIRECT@outlook.com'
 
 const server = bedrock.createServer({
   host: '0.0.0.0',
@@ -36,20 +37,21 @@ async function autoAcceptFriends() {
     const xboxToken = await auth.getXboxToken('http://xboxlive.com')
     const xblAuth = `XBL3.0 x=${xboxToken.userHash};${xboxToken.XSTSToken}`
 
-    const res = await fetch('https://peoplehub.xboxlive.com/users/me/people/summary', {
+    const res = await fetch('https://social.xboxlive.com/users/me/people/followers', {
       headers: {
         Authorization: xblAuth,
-        'x-xbl-contract-version': '5',
+        'x-xbl-contract-version': '2',
         'Accept-Language': 'en-US'
       }
     })
 
-const data = await res.json()
-console.log('[Bot] Full API response:', JSON.stringify(data))
-const pending = data?.people?.filter(p => p.isFollowingCaller && !p.isFollowedByCaller)
+    const data = await res.json()
+    console.log('[Bot] Full API response:', JSON.stringify(data).slice(0, 300))
 
-    if (pending?.length) {
-      for (const person of pending) {
+    const followers = data?.people ?? []
+
+    if (followers.length > 0) {
+      for (const person of followers) {
         await fetch(`https://social.xboxlive.com/users/me/people/xuid(${person.xuid})`, {
           method: 'PUT',
           headers: {
