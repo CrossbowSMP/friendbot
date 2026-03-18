@@ -15,12 +15,16 @@ async function startBot() {
     profilesFolder: AUTH_CACHE,
     flow: 'live',
     authTitle: Titles.MinecraftNintendoSwitch,
-    deviceType: 'Nintendo'
+    deviceType: 'Nintendo',
+    version: '1.21.60'
   })
 
+  client.on('connect', () => console.log('[Bot] TCP connected'))
+  client.on('login', () => console.log('[Bot] Logged in, waiting for spawn...'))
+  client.on('join', () => console.log('[Bot] Joined world'))
   client.on('spawn', () => console.log('[Bot] Connected and visible to friends!'))
   client.on('disconnect', (reason) => {
-    console.log('[Bot] Disconnected:', reason)
+    console.log('[Bot] Disconnected:', JSON.stringify(reason))
     setTimeout(startBot, 5000)
   })
   client.on('error', (err) => {
@@ -68,7 +72,6 @@ async function autoAcceptFriends() {
 }
 
 async function main() {
-  // Authenticate once first so both startBot and autoAcceptFriends share the same token
   console.log('[Bot] Authenticating...')
   const auth = new Authflow(BOT_EMAIL, AUTH_CACHE, {
     flow: 'live',
