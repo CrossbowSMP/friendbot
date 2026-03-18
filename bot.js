@@ -1,17 +1,17 @@
 const bedrock = require('bedrock-protocol')
-const { Authflow } = require('prismarine-auth')
+const { Authflow, Titles } = require('prismarine-auth')
 
 // ✅ CONFIG — change these
 const TARGET_SERVER_IP = '162.120.4.88'
 const TARGET_SERVER_PORT = 9010
-const BOT_PORT = 19132 // port your bot listens on
+const BOT_PORT = 19132
+const BOT_EMAIL = 'CSMPREDIRECT@outlook.com' // ← your bot's Microsoft email
 
-// Start a fake Bedrock server
 const server = bedrock.createServer({
   host: '0.0.0.0',
   port: BOT_PORT,
-  version: '1.20.0',
-  offline: false, // must be false for Xbox auth
+  version: '1.21.0',
+  offline: false,
   motd: {
     motd: 'Connecting you...',
     levelName: 'Join to connect!'
@@ -20,14 +20,9 @@ const server = bedrock.createServer({
 
 console.log(`[Bot] Listening on port ${BOT_PORT}`)
 
-// When a player joins → transfer them instantly
 server.on('connect', (client) => {
-  console.log(`[Bot] ${client.getUserData()?.displayName} joined`)
-
   client.on('join', () => {
-    console.log(`[Bot] Transferring to ${TARGET_SERVER_IP}:${TARGET_SERVER_PORT}`)
-
-    // Send the Transfer packet — kicks them to your real server
+    console.log(`[Bot] Player joined, transferring...`)
     client.queue('transfer', {
       server_address: TARGET_SERVER_IP,
       port: TARGET_SERVER_PORT
@@ -35,54 +30,46 @@ server.on('connect', (client) => {
   })
 })
 
-// Auto-accept friend requests using Xbox Live
 async function autoAcceptFriends() {
-const auth = new Authflow('YourBotEmail@outlook.com', './auth-cache', {
-  flow: 'live',
-  authTitle: '00000000402b5328'  // Minecraft's own client ID
-})
+  const auth = new Authflow(BOT_EMAIL, './auth-cache', {
+    flow: 'live',
+    authTitle: Titles.MinecraftNintendoSwitch, // ← this fixes the error!
+    deviceType: 'Nintendo'
+  })
 
-  const token = await auth.getXboxToken()
-  const xuid = token.userXUID
-  const xblToken = `XBL3.0 x=${token.userHash};${token.XSTSToken}`
+  try {
+    const xboxToken = await auth.getXboxToken('http://xboxlive.com')
+    const xblAuth = `XBL3.0 x=${xboxToken.userHash};${xboxToken.XSTSToken}`
 
-  console.log('[Bot] Checking friend requests...')
-
-  // Fetch pending friend requests
-  const res = await fetch(
-    `https://peoplehub.xboxlive.com/users/me/people/summary`,
-    {
+    const res = await fetch('https://peoplehub.xboxlive.com/users/me/people/summary', {
       headers: {
-        Authorization: xblToken,
+        Authorization: xblAuth,
         'x-xbl-contract-version': '5',
         'Accept-Language': 'en-US'
       }
-    }
-  )
+    })
 
-  const data = await res.json()
-  const pending = data?.people?.filter(p => p.isFollowingCaller === false && p.isFollowedByCaller === false)
+    const data = await res.json()
+    const pending = data?.people?.filter(p => p.isFollowingCaller && !p.isFollowedByCaller)
 
-  if (pending?.length) {
-    for (const person of pending) {
-      // Add them back (follow = friend in Xbox)
-      await fetch(
-        `https://social.xboxlive.com/users/me/people/xuid(${person.xuid})`,
-        {
+    if (pending?.length) {
+      for (const person of pending) {
+        await fetch(`https://social.xboxlive.com/users/me/people/xuid(${person.xuid})`, {
           method: 'PUT',
           headers: {
-            Authorization: xblToken,
+            Authorization: xblAuth,
             'x-xbl-contract-version': '2'
           }
-        }
-      )
-      console.log(`[Bot] Auto-friended: ${person.displayName}`)
+        })
+        console.log(`[Bot] Auto-friended: ${person.displayName}`)
+      }
+    } else {
+      console.log('[Bot] No pending requests.')
     }
-  } else {
-    console.log('[Bot] No pending requests.')
+  } catch (err) {
+    console.error('[Bot] Auth error:', err.message)
   }
 }
 
-// Check for friend requests every 30 seconds
 autoAcceptFriends()
 setInterval(autoAcceptFriends, 30_000)
