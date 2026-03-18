@@ -45,7 +45,8 @@ async function autoAcceptFriends() {
     })
 
     const data = await res.json()
-    const pending = data?.people?.filter(p => p.isFollowingCaller && !p.isFollowedByCaller)
+    console.log('[Bot] People list:', JSON.stringify(data?.people?.slice(0,3)))
+const pending = data?.people?.filter(p => p.isFollowingCaller && !p.isFollowedByCaller)
 
     if (pending?.length) {
       for (const person of pending) {
