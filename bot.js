@@ -15,8 +15,7 @@ async function startBot() {
     profilesFolder: AUTH_CACHE,
     flow: 'live',
     authTitle: Titles.MinecraftNintendoSwitch,
-    deviceType: 'Nintendo',
-    version: '1.21.60'
+    deviceType: 'Nintendo'
   })
 
   client.on('connect', () => console.log('[Bot] TCP connected'))
