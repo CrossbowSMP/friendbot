@@ -2,8 +2,8 @@ const bedrock = require('bedrock-protocol')
 const { Authflow } = require('prismarine-auth')
 
 // ✅ CONFIG — change these
-const TARGET_SERVER_IP = ''
-const TARGET_SERVER_PORT = 
+const TARGET_SERVER_IP = '162.120.4.88'
+const TARGET_SERVER_PORT = 9010
 const BOT_PORT = 19132 // port your bot listens on
 
 // Start a fake Bedrock server
