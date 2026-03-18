@@ -37,9 +37,10 @@ server.on('connect', (client) => {
 
 // Auto-accept friend requests using Xbox Live
 async function autoAcceptFriends() {
-  const auth = new Authflow('CSMPREDIRECT@outlook.com', './auth-cache', {
-    flow: 'msal'
-  })
+const auth = new Authflow('YourBotEmail@outlook.com', './auth-cache', {
+  flow: 'live',
+  authTitle: '00000000402b5328'  // Minecraft's own client ID
+})
 
   const token = await auth.getXboxToken()
   const xuid = token.userXUID
