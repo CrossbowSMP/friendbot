@@ -6,7 +6,12 @@ WORKDIR /app
 
 COPY --from=playit /usr/local/bin/playit /usr/local/bin/playit
 
-RUN apt-get update && apt-get install -y ca-certificates
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
 RUN npm install --production
